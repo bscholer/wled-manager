@@ -13,6 +13,9 @@ logging.basicConfig()
 LOG = logging.getLogger()
 LOG.setLevel(logging.DEBUG)
 
+ENV_SUBNET = os.getenv('SUBNET') 
+
+
 def repair(ip, name):
     LOG.info("Repair broken presets on %s - %s", ip, name)
 
@@ -85,15 +88,18 @@ def main():
         Output directory should be a git repo or subdirectory of one.
         Run this script from a cronjob to backup all your WLED devices in your networks.
     """)
-    parser.add_argument('subnets', metavar='subnets', type=str, nargs='+',
-                        help='IP/Subnet to scan')
+    parser.add_argument('subnets', metavar='subnets', type=str, nargs='*',
+                        help='IP/Subnet to scan, can use SUBNET environment variable')
     parser.add_argument('--output', dest='output', required=True,
                         help='output git repository')
     args = parser.parse_args()
     print(args)
 
-    for subnet in args.subnets:
-        scanSubnet(subnet, args.output)
+    if len(args.subnets):
+        for subnet in args.subnets:
+            scanSubnet(subnet, args.output)
+    else:
+        scanSubnet(ENV_SUBNET, args.output)
     subprocess.call(["git", "-C", args.output, "pull"])
     subprocess.call(["git", "-C", args.output, "commit", "-m", "wled-backup sync"])
     subprocess.call(["git", "-C", args.output, "push"])
